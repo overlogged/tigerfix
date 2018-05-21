@@ -1,0 +1,5 @@
+cmake-build-debug/
+cmake-debug-build/
+.idea/
+.vscode
+obj
