@@ -62,6 +62,7 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
     ptr_t so_base = (ptr_t) so_info.dli_fbase;
     ptr_t main_base = (ptr_t) main_info.dli_fbase;
 
+    // fix got
     for (int i = 0; i < 2; i++) {
         ptr_t *p_got_item = (ptr_t *) (ext_symbols[2 * i] + so_base);
         ptr_t real_addr = ext_symbols[2 * i + 1] + main_base;
@@ -88,17 +89,19 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
         // push %rax
         old_entry[0] = 0x50;
 
-        // movq %0,%%rax
+        // movq %0xc0ffee,%%rax
         old_entry[1] = 0x48;
         old_entry[2] = 0xb8;
         *((ptr_t *) (old_func + 3)) = new_func;
 
-        // jmpq *%eax
+        // jmpq *%rax
         old_entry[11] = 0xff;
         old_entry[12] = 0xe0;
 
+        // nop
         old_entry[13] = old_entry[14] = old_entry[15] = 0x90;
 
         mprotect(pg, pagesize, PROT_READ | PROT_EXEC);
+        // todo: 2 pages
     }
 }

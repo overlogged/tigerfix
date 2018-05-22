@@ -28,20 +28,6 @@ void wait_stopped(pid_t pid){
     int status;
     while(true){
         assert(waitpid(pid,&status,0)!=-1);
-        if (WIFSTOPPED(status)) {
-            printf("Process stopped with signal %d", WSTOPSIG(status));
-        }
-        if (WIFEXITED(status)) {
-            printf("Process exited with signal %d", WEXITSTATUS(status));
-        }
-        if (WIFSIGNALED(status)) {
-            printf("Process terminated with signal %d", WTERMSIG(status));
-            if (WCOREDUMP(status))
-                printf("Process core dumped");
-        }
-        if (WIFCONTINUED(status)) {
-            printf("Process was resumed by delivery of SIGCONT");
-        }
         printf("%d\n",status);
         if(WIFSTOPPED(status)){
             break;
@@ -53,6 +39,8 @@ void wait_trap(pid_t pid){
     int status;
     while(true){
         assert(waitpid(pid,&status,0)!=-1);
+
+        // for debug
         printf("%d %d %d %d\n",status,WIFSTOPPED(status),WSTOPSIG(status) == SIGTRAP,WSTOPSIG(status));
         struct user_regs_struct regs;
         assert(ptrace(PTRACE_GETREGS, pid, NULL, &regs)==0);
@@ -66,7 +54,7 @@ void wait_trap(pid_t pid){
 
 /**
  * assert
- *  1. cat /proc/pid/maps   maxlen=1024
+ *  1. cat /proc/pid/maps   maxlen=4096
  *  2. cat /proc/pid/maps   first line is main
  */
 int main(int argc, const char *argv[]) {
@@ -78,7 +66,7 @@ int main(int argc, const char *argv[]) {
     auto pid = (pid_t) (strtol(argv[1], nullptr, 10));
 
     // calc base
-    uint64_t so_base = 0, main_base = 0;
+    uint64_t shell_base = 0, main_base = 0;
 
     char filename[1024];
     sprintf(filename, "/proc/%d/maps", pid);
@@ -99,16 +87,16 @@ int main(int argc, const char *argv[]) {
             if (it != string::npos) {
                 auto end = line.find('-');
                 auto str_base = line.substr(0, end);
-                so_base = (uint64_t) strtol(str_base.c_str(), nullptr, 16);
+                shell_base = (uint64_t) strtol(str_base.c_str(), nullptr, 16);
                 break;
             }
         }
     }
 
-    auto do_fix_entry = (so_base + 0x0000000000000960);    // nm libtfix.so | grep do_fix_entry
+    auto do_fix_entry = (shell_base + 0x0000000000000960);    // nm libtfix.so | grep do_fix_entry
 
     int status;
-    printf("daemon: 0x%lx\n",do_fix_entry);
+    printf("do_fix_entry: 0x%lx\n",do_fix_entry);
 
     // attach
     assert(ptrace(PTRACE_ATTACH, pid, NULL, 0)==0);
