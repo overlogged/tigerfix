@@ -63,7 +63,11 @@ def main():
                 break
     
     # x86-64
-    do_fix_entry = shell_base + 0x0000000000000d50
+    # nm /usr/local/lib/libtfix.so | grep do_fix_entry
+    temp_cmd = "nm /usr/local/lib/libtfix.so | grep do_fix_entry"
+    temp_address = os.pread().split(temp_cmd)[0]
+    # do_fix_entry = shell_base + 0x0000000000000d30
+    do_fix_entry = shell_base + temp_address
 
     print("do_fix_entry: 0x%d", hex(do_fix_entry))
 
@@ -95,18 +99,21 @@ def main():
 
     # set new regs
     process.setregs(new_regs)
-    process.cont()
-    # process.waitSignals(signal.SIGTRAP, signal.SIGSTOP)
-    wait_trap(pid)
-
-    # restore old regs
-    process.setregs(old_regs)
 
     # for debugging
     while False:
         process.singleStep()
         test_regs = process.getregs()
-        
+        print(test_regs.rip)
+
+    process.cont()
+
+    process.waitSignals(signal.SIGTRAP, signal.SIGSTOP)
+    # wait_trap(pid)
+
+    # restore old regs
+    process.setregs(old_regs)
+
     # detach and quit
     process.detach()
     debugger.quit()
