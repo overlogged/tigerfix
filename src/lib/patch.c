@@ -23,7 +23,7 @@ char soname[4096];
 
 static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
 
-	const char *path = "/home/yxy/桌面/hotfixwork5.6/test1/patch.tfp";	//write your patch.tfp path here beautifully
+	const char *path = "./patch.tfp";	//write your patch.tfp path here beautifully
 
     if (tigerfix_magic) tigerfix_magic = 0x20796b73;
 

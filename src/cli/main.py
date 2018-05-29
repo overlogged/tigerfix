@@ -65,9 +65,9 @@ def main():
     # x86-64
     # nm /usr/local/lib/libtfix.so | grep do_fix_entry
     temp_cmd = "nm /usr/local/lib/libtfix.so | grep do_fix_entry"
-    temp_address = os.pread().split(temp_cmd)[0]
+    temp_address = os.popen(temp_cmd).read().split(' ')[0]
     # do_fix_entry = shell_base + 0x0000000000000d30
-    do_fix_entry = shell_base + temp_address
+    do_fix_entry = shell_base + int(temp_address, base=16)
 
     print("do_fix_entry: 0x%d", hex(do_fix_entry))
 
