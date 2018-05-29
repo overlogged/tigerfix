@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <string.h>
+#include <assert.h>
 
 typedef u_int64_t ptr_t;
 
@@ -18,67 +19,65 @@ __asm__(
 
 __attribute_used__ __uint64_t tigerfix_magic = 0x20796b73;
 
+char soname[4096];
 
 static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
 
-	const char *path = "/home/yxy/桌面/hotfixwork5.6/test/tigerfix/src/cli/configandpatch.tfp";
+	const char *path = "./patch.tfp";
 
     if (tigerfix_magic) tigerfix_magic = 0x20796b73;
 
     //read config
     FILE *fp = fopen(path, "rb");
-    if(!fp) {
-		fprintf(stderr, "cannot open tfix.config!\n");
-		exit(-1);
-    }
+    assert(fp!=NULL);
     int flag, n, m;
 	u_int64_t (*sym)[2], (*addr)[2];
 
-	if(EOF == fscanf(fp, "%d%d", &flag, &n)) exit(-1);
+	assert(EOF != fscanf(fp, "%d%d", &flag, &n));
+
 	sym = (u_int64_t(*)[2])malloc(sizeof(u_int64_t) * 2 * n);
 	for(int i = 0; i < n; i ++){
-		if(EOF == fscanf(fp, "%lx%lx", &sym[i][0], &sym[i][1])) exit(-1);
+		assert(EOF != fscanf(fp, "%lx%lx", &sym[i][0], &sym[i][1]));
 	}
-	if(EOF == fscanf(fp, "%d", &m)) exit(-1);
-	addr = (u_int64_t(*)[2])malloc(sizeof(u_int64_t) * 2 * m);
-	for(int i = 0; i < m; i ++){
-		if(EOF == fscanf(fp, "%lx%lx", &addr[i][0], &addr[i][1])) exit(-1);
+
+	assert(EOF != fscanf(fp, "%d", &m));
+	
+    addr = (u_int64_t(*)[2])malloc(sizeof(u_int64_t) * 2 * m);
+	for(int i = 0; i < m; i ++) {
+		assert(EOF != fscanf(fp, "%lx%lx", &addr[i][0], &addr[i][1]));
 	}
 
 	//read elf
-	if(fgetc(fp) != '\n') exit(-1);		//要保证tfp文件的config最后一个字符是单一的\n 之后紧接着patch
+	assert(fgetc(fp) == '\n');		//要保证tfp文件的config最后一个字符是单一的\n 之后紧接着patch
 	long start = ftell(fp);
 	fseek(fp, 0L, SEEK_END);
 	long end = ftell(fp);
 	fseek(fp, start, SEEK_SET);
 	size_t len = end - start;
 	void *mem = malloc(sizeof(char) * len);
-	if(1 != fread(mem, len, 1, fp)) exit(-1);
-	char soname[4096];
+	assert(fread(mem, len, 1, fp)==1);
 	strcpy(soname, path);
 	strcat(soname, ".so");
+    printf("%s\n",soname);
+    
 	FILE *fpso = fopen(soname, "wb");
-	if(!fpso) exit(-1);
-	if(1 != fwrite(mem, len, 1, fpso)) exit(-1);
+    assert(fpso!=NULL);
+	assert(fwrite(mem, len, 1, fpso)==1);
 	fclose(fpso);
 	fclose(fp);
 
 	//test read result
-//	fprintf(stdout, "\n%d\n%d\n", flag, n);
-//	for(int i = 0; i < n; i ++){
-//		fprintf(stdout, "%0lx %0lx\n", sym[i][0], sym[i][1]);
-//	}
-//	fprintf(fp, "%d\n", m);
-//	for(int i = 0; i < m; i ++){
-//		fprintf(stdout, "%0lx %0lx\n", addr[i][0], addr[i][1]);
-//	}
-//
-
-/*
-diff /home/yxy/桌面/hotfixwork5.6/test/tigerfix/src/cli/configandpatch.tfp.so /home/yxy/桌面/hotfixwork5.6/test/tigerfix/examples/print_prime/obj/patch.so
-*/
-
+	fprintf(stdout, "\n%d\n%d\n", flag, n);
+	for(int i = 0; i < n; i ++){
+		fprintf(stdout, "%0lx %0lx\n", sym[i][0], sym[i][1]);
+	}
+	fprintf(stdout, "%d\n", m);
+	for(int i = 0; i < m; i ++){
+		fprintf(stdout, "%0lx %0lx\n", addr[i][0], addr[i][1]);
+	}
+    
     // load
+    printf("%s\n",soname);
     void *handle = dlopen(soname, RTLD_LAZY); // config: patch.so  soname
     if (!handle) {
         fprintf(stderr, "%s\n", dlerror());
@@ -106,8 +105,8 @@ diff /home/yxy/桌面/hotfixwork5.6/test/tigerfix/src/cli/configandpatch.tfp.so 
     const long pagesize = sysconf(_SC_PAGE_SIZE);
 
     // redirect symbols in so
-    ptr_t *ext_symbols = malloc(sizeof(ptr_t) * 2 * n); // config: external symbols
-    ptr_t *fix_units = malloc(sizeof(ptr_t) * 2 * m);   // config: fix units
+    ptr_t *ext_symbols = malloc(sizeof(ptr_t) * 2 * n);
+    ptr_t *fix_units = malloc(sizeof(ptr_t) * 2 * m);
 
     for(int i = 0; i < n; i ++){
 		ext_symbols[2 * i] = sym[i][0];
@@ -117,20 +116,16 @@ diff /home/yxy/桌面/hotfixwork5.6/test/tigerfix/src/cli/configandpatch.tfp.so 
 		fix_units[2 * i] = addr[i][0];
 		fix_units[2 * i + 1] = addr[i][1];
     }
-//
-//    ext_symbols[0] = (ptr_t) 0x00000000002005d0;    // objdump -R patch.so | grep global_data
-//    ext_symbols[1] = (ptr_t) 0x000000000020104c;    // nm main | grep global_data
-//    ext_symbols[2] = (ptr_t) 0x00000000002005c8;    // objdump -R patch.so | grep print_global
-//    ext_symbols[3] = (ptr_t) 0x00000000000007a0;    // nm main | grep print_global
-//    fix_units[0] = (ptr_t) 0x0000000000000720;      // nm main | grep is_prime
-//    fix_units[1] = (ptr_t) 0x0000000000000370;      // nm patch.so | grep fix_is_prime
-/*
-objdump -R patch.so | grep global_data && nm main | grep global_data && objdump -R patch.so | grep print_global && nm main | grep print_global && nm main | grep is_prime && nm patch.so | grep fix_is_prime
-*/
-    ptr_t so_base = (ptr_t) so_info.dli_fbase;
-    ptr_t main_base = (ptr_t) main_info.dli_fbase * flag;	//flag = 绝对地址  flag = 相对地址
 
-    printf("new func addr should be %p\n", dlsym(handle, "fix_is_prime"));
+    /*
+     objdump -R patch.so | grep global_data && nm main | grep global_data && objdump -R patch.so | grep print_global && nm main | grep print_global && nm main | grep is_prime && nm patch.so | grep fix_is_prime
+    */
+    ptr_t so_base = (ptr_t) so_info.dli_fbase;
+    ptr_t main_base = (ptr_t) main_info.dli_fbase * flag;	// flag:  0 for abs
+
+    void *p = dlsym(handle, "fix_is_prime");
+    assert(p!=NULL);
+    printf("new func addr should be %p\n", p);
 
     // fix got
     for (int i = 0; i < 2; i++) {
@@ -183,7 +178,6 @@ objdump -R patch.so | grep global_data && nm main | grep global_data && objdump 
         mprotect(pg + pagesize, pagesize, PROT_READ | PROT_EXEC);
 
     }
-
 	free(sym);
 	free(addr);
 	free(ext_symbols);

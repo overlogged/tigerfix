@@ -63,7 +63,7 @@ def main():
                 break
     
     # x86-64
-    do_fix_entry = shell_base + 0x0000000000000960
+    do_fix_entry = shell_base + 0x0000000000000d50
 
     print("do_fix_entry: 0x%d", hex(do_fix_entry))
 

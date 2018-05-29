@@ -94,7 +94,7 @@ int main(int argc, const char *argv[]) {
     }
 
     // x86-64
-    auto do_fix_entry = (shell_base + 0x0000000000000960);    // nm libtfix.so | grep do_fix_entry
+    auto do_fix_entry = (shell_base + 0x0000000000000d50);    // nm libtfix.so | grep do_fix_entry
 
     int status;
     printf("do_fix_entry: 0x%lx\n",do_fix_entry);
