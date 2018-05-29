@@ -12,4 +12,4 @@ obj/patch.so:patch.c
 .PHONY: clean
 
 clean:
-	rm -rf obj/*
+	rm -rf obj
