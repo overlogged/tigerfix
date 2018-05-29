@@ -23,62 +23,54 @@ char soname[4096];
 
 static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
 
-	const char *path = "./patch.tfp";
+	const char *path = "/home/yxy/桌面/hotfixwork5.6/test1/patch.tfp";	//write your patch.tfp path here beautifully
 
     if (tigerfix_magic) tigerfix_magic = 0x20796b73;
 
     //read config
     FILE *fp = fopen(path, "rb");
-    assert(fp!=NULL);
+    assert(fp != NULL);
     int flag, n, m;
 	u_int64_t (*sym)[2], (*addr)[2];
 
-	assert(EOF != fscanf(fp, "%d%d", &flag, &n));
+	assert(fscanf(fp, "%d%d", &flag, &n) != EOF);
 
 	sym = (u_int64_t(*)[2])malloc(sizeof(u_int64_t) * 2 * n);
 	for(int i = 0; i < n; i ++){
-		assert(EOF != fscanf(fp, "%lx%lx", &sym[i][0], &sym[i][1]));
+		assert(fscanf(fp, "%lx%lx", &sym[i][0], &sym[i][1]) != EOF);
 	}
 
-	assert(EOF != fscanf(fp, "%d", &m));
-	
+	assert(fscanf(fp, "%d", &m) != EOF);
+
     addr = (u_int64_t(*)[2])malloc(sizeof(u_int64_t) * 2 * m);
 	for(int i = 0; i < m; i ++) {
-		assert(EOF != fscanf(fp, "%lx%lx", &addr[i][0], &addr[i][1]));
+		assert(fscanf(fp, "%lx%lx", &addr[i][0], &addr[i][1]) != EOF);
 	}
 
-	//read elf
-	assert(fgetc(fp) == '\n');		//要保证tfp文件的config最后一个字符是单一的\n 之后紧接着patch
+	//read and generate patch.tfp.so
+	//assert: elf start with 0x7f and there is no 0x7f between config and elf
+	while(fgetc(fp) != 0x7f);
+	fseek(fp, -1L, SEEK_CUR);
+
 	long start = ftell(fp);
 	fseek(fp, 0L, SEEK_END);
 	long end = ftell(fp);
 	fseek(fp, start, SEEK_SET);
 	size_t len = end - start;
+
 	void *mem = malloc(sizeof(char) * len);
-	assert(fread(mem, len, 1, fp)==1);
+	assert(fread(mem, len, 1, fp) == 1);
 	strcpy(soname, path);
 	strcat(soname, ".so");
-    printf("%s\n",soname);
-    
+
 	FILE *fpso = fopen(soname, "wb");
-    assert(fpso!=NULL);
-	assert(fwrite(mem, len, 1, fpso)==1);
+    assert(fpso != NULL);
+	assert(fwrite(mem, len, 1, fpso) == 1);
 	fclose(fpso);
 	fclose(fp);
 
-	//test read result
-	fprintf(stdout, "\n%d\n%d\n", flag, n);
-	for(int i = 0; i < n; i ++){
-		fprintf(stdout, "%0lx %0lx\n", sym[i][0], sym[i][1]);
-	}
-	fprintf(stdout, "%d\n", m);
-	for(int i = 0; i < m; i ++){
-		fprintf(stdout, "%0lx %0lx\n", addr[i][0], addr[i][1]);
-	}
-    
     // load
-    printf("%s\n",soname);
-    void *handle = dlopen(soname, RTLD_LAZY); // config: patch.so  soname
+    void *handle = dlopen(soname, RTLD_LAZY);
     if (!handle) {
         fprintf(stderr, "%s\n", dlerror());
         exit(-1);
@@ -123,16 +115,10 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
     ptr_t so_base = (ptr_t) so_info.dli_fbase;
     ptr_t main_base = (ptr_t) main_info.dli_fbase * flag;	// flag:  0 for abs
 
-    void *p = dlsym(handle, "fix_is_prime");
-    assert(p!=NULL);
-    printf("new func addr should be %p\n", p);
-
     // fix got
     for (int i = 0; i < 2; i++) {
         ptr_t *p_got_item = (ptr_t *) (ext_symbols[2 * i] + so_base);
         ptr_t real_addr = ext_symbols[2 * i + 1] + main_base;
-
-		printf("got is %p -- realaddr is %lx\n", p_got_item, real_addr);
 
         void *pg = (void *) ((ptr_t) p_got_item & ~(pagesize - 1));
         mprotect(pg, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
@@ -149,8 +135,6 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
 
         ptr_t old_func = main_base + fix_units[2 * i];
         ptr_t new_func = so_base + fix_units[2 * i + 1];
-
-        printf("oldfuncaddr is %lx -- newfuncaddr is %lx\n", old_func, new_func);
 
         void *pg = (void *) (old_func & ~(pagesize - 1));
         mprotect(pg, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
