@@ -26,10 +26,6 @@ def main():
     pid = args.pid
     cpath = args.cpath
     
-    # testbench
-    # print("pid: " + args.pid)
-    # print("config path: " + args.cpath)
-    
     # Calculating base address
     shell_base = 0
     main_base = 0
@@ -76,11 +72,7 @@ def main():
 
     # attach the running process (pid)
     process = debugger.addProcess(pid, False)
-
-    # process.waitSignals(signal.SIGSTOP)
-    wait_stopped(pid)
-
-
+    
     # next syscall
     ENOSYS = 38
     while True:
@@ -109,17 +101,18 @@ def main():
 
     # restore old regs
     process.setregs(old_regs)
-    while True:
+
+    # for debugging
+    while False:
         process.singleStep()
         test_regs = process.getregs()
         
-    
     # detach and quit
     process.detach()
     debugger.quit()
     
     
-    # try opening config file
+    # TODO: config file
     if False:
         try:
             config_file = open(cpath)
