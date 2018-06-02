@@ -26,8 +26,6 @@ def main():
     gen_parser = subparsers.add_parser("gen", help="generate a fixing patch")    
     gen_parser.add_argument("-m", "--main", help="path of main program", default="../../examples/print_prime/obj/main")
     gen_parser.add_argument("-p", "--patch", help="path of patch file", default="../../examples/print_prime/patch/patch.so")
-    # gen_parser.add_argument("-c", "--config", help="path of config", default="../../examples/print_prime/obj/config")
-    # gen_parser.add_argument("-o", "--output", help="path of output", default="../../examples/print_prime/obj/patch.tfp")
     gen_parser.set_defaults(func=utils.gen.main)
 
     # Parser for Patch Cleaning
