@@ -6,26 +6,13 @@ def hex_64bit(some_int):
     ans = format(some_int, "x")
     ans = ans.zfill(16) # 64 bit is 16 digits long in hex
     return ans
-def main():
-    # Argument Parsing
-    # Setting Argument Format
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--main", help="path of main process", default="../../examples/print_prime/obj/main")
-    parser.add_argument("-p", "--patch", help="path of patch file", default="../../examples/print_prime/obj/patch.so")
-    parser.add_argument("-c", "--config", help="path of config", default="../../examples/print_prime/obj/wtx_config")
-    parser.add_argument("-o", "--output", help="path of output", default="../../examples/print_prime/obj/wtx_patch.tfp")
 
-    # Getting Arguments from Input
-    args = parser.parse_args()
+def main(args):
+    # Get parameters from args
     main_path = args.main
     patch_path = args.patch
     config_filename = args.config
     tiger_fix_patch_path = args.output
-
-    # patch_path = "obj/patch.so"
-    # main_path = "obj/main"
-    # config_filename = "obj/config"
-    # tiger_fix_patch_path = "obj/patch.tfp"
 
     libm_main = lief.ELF.parse(main_path)
     libm_patch = lief.ELF.parse(patch_path)
@@ -88,5 +75,5 @@ def main():
     tfp_file.write(patch_bin.read())
     tfp_file.close()
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
