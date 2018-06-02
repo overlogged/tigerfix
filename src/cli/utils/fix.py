@@ -7,20 +7,19 @@ import lief
 
 def wait_stopped(pid):
     while True:
-        res, status = os.waitpid(pid, 0)
+        _, status = os.waitpid(pid, 0)
         if os.WIFSTOPPED(status):
             break
 
 def wait_trap(pid):
     while True:
-        res, status = os.waitpid(pid, 0)
+        _, status = os.waitpid(pid, 0)
         if os.WIFSTOPPED(status) and os.WSTOPSIG(status) == signal.SIGTRAP:
             break
 
 def main(args):
     # Get parameters from args
     pid = args.pid
-    patch_path = args.patch
 
     # Calculating base address
     shell_base = 0
@@ -81,6 +80,7 @@ def main(args):
     while True:
         process.syscall()
         wait_stopped(pid)
+        # process.waitSignals(signal.SIGSTOP)
         eax = process.getreg('eax')
         if eax != -ENOSYS:              # if not invalid syscall
             break
@@ -99,16 +99,10 @@ def main(args):
     # set new regs
     process.setregs(new_regs)
 
-    # for debugging
-    while False:
-        process.singleStep()
-        test_regs = process.getregs()
-        print(test_regs.rip)
-
     process.cont()
 
-    process.waitSignals(signal.SIGTRAP, signal.SIGSTOP)
-    # wait_trap(pid)
+    # process.waitSignals(signal.SIGTRAP, signal.SIGSTOP)
+    wait_trap(pid)
 
     # restore old regs
     process.setregs(old_regs)
@@ -116,14 +110,6 @@ def main(args):
     # detach and quit
     process.detach()
     debugger.quit()
-    
-    
-    # TODO: config file
-    if False:
-        try:
-            config_file = open(patch_path)
-        except IOError as e:
-            print("Couldn't open config file (%s)!" % e)
 
 # if __name__ == '__main__':
 #     main()

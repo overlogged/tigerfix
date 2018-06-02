@@ -1,15 +1,16 @@
-all:obj/main obj/patch.so
+all:obj/main patch/patch.so
 
 obj/main:main.c
 	mkdir -p obj
 	gcc main.c -O2 -ltfix -o obj/main
 
-obj/patch.so:patch.c
-	mkdir -p obj
-	gcc patch.c -c -O2 -fPIC -o obj/patch.o
-	ld obj/patch.o -shared -fno-plt --defsym global_data=0xc0ffee --defsym print_global=0xc0ffee -o obj/patch.so
+patch/patch.so:patch.c
+	mkdir -p patch
+	gcc patch.c -c -O2 -fPIC -o patch/patch.o
+	ld patch/patch.o -shared -fno-plt --defsym global_data=0xc0ffee --defsym print_global=0xc0ffee -o patch/patch.so
 
 .PHONY: clean
 
 clean:
 	rm -rf obj
+	rm -rf patch

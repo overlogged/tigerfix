@@ -11,8 +11,13 @@ def main(args):
     # Get parameters from args
     main_path = args.main
     patch_path = args.patch
-    config_filename = args.config
-    tiger_fix_patch_path = args.output
+    
+    # Create directory for the config and the tiger fix patch
+    fix_dir = os.path.join(os.path.dirname(main_path), "tigerfix_temp")
+    if not os.path.isdir(fix_dir):
+        os.mkdir(fix_dir)
+    config_filename = os.path.join(fix_dir, "config")
+    tiger_fix_patch_path = os.path.join(fix_dir, "patch.tfp")
 
     libm_main = lief.ELF.parse(main_path)
     libm_patch = lief.ELF.parse(patch_path)

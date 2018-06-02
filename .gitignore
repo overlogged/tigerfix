@@ -3,6 +3,7 @@ cmake-debug-build/
 .idea/
 .vscode
 obj
+patch
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
