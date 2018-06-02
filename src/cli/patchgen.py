@@ -2,14 +2,18 @@ import os
 import lief
 import argparse
 
+def hex_64bit(some_int):
+    ans = format(some_int, "x")
+    ans = ans.zfill(16) # 64 bit is 16 digits long in hex
+    return ans
 def main():
     # Argument Parsing
     # Setting Argument Format
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--main", help="path of main process", default="../../examples/print_prime/obj/main")
     parser.add_argument("-p", "--patch", help="path of patch file", default="../../examples/print_prime/obj/patch.so")
-    parser.add_argument("-c", "--config", help="path of config", default="../../examples/print_prime/obj/config")
-    parser.add_argument("-o", "--output", help="path of output", default="../../examples/print_prime/obj/patch.tfp")
+    parser.add_argument("-c", "--config", help="path of config", default="../../examples/print_prime/obj/wtx_config")
+    parser.add_argument("-o", "--output", help="path of output", default="../../examples/print_prime/obj/wtx_patch.tfp")
 
     # Getting Arguments from Input
     args = parser.parse_args()
@@ -40,35 +44,35 @@ def main():
     fixfunc_addr = []
     for x in libm_symname:
         if x[:4] == 'fix_':
-        fixfunc_addr.append(hex(libm_patch.get_symbol(x).value))
-        fixfunc.append(x[4:])
+            fixfunc_addr.append(hex_64bit(libm_patch.get_symbol(x).value))
+            fixfunc.append(x[4:])
 
     func_addr = []
     for y in fixfunc:
         try:
-            func_addr.append(hex(libm_main.get_symbol(y).value))
-        except as e:
+            func_addr.append(hex_64bit(libm_main.get_symbol(y).value))
+        except e:
             raise NameError("Symbols not found:%s" % e)
 
     globalname=[]
     for x in libm_symname:
-        if(libm_fix.get_symbol(x).value==int("c0ffee",16)):
+        if(libm_patch.get_symbol(x).value==int("c0ffee",16)):
             globalname.append(x)
     globaladdr=[]
     for y in globalname:
-        globaladdr.append(hex(libm_main.get_symbol(y).value))
+        globaladdr.append(hex_64bit(libm_main.get_symbol(y).value))
         #print(libm_main.get_symbol(y))
 
     got_addr=[]
-    relocate=list(libm_fix.relocations)
+    relocate=list(libm_patch.relocations)
     for name in globalname:
         for i in range(len(globalname)):
             if relocate[i].symbol.name==name:
-                got_addr.append(hex((relocate[i].address)))
+                got_addr.append(hex_64bit((relocate[i].address)))
 
     # generating config file
     configfile = open(config_filename, "w")
-    configfile.write("%d\n", % sig)
+    configfile.write("%d\n" % sig)
     configfile.write("%d\n" % len(globalname))
     for i in range(len(globaladdr)):
         configfile.write(got_addr[i] + ' ' + globaladdr[i] + '\n')
