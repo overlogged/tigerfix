@@ -45,7 +45,10 @@ def main():
 
     # exec function
     args = parser.parse_args()
-    args.func(args)
+    try:
+        args.func(args)
+    except AttributeError:
+        parser.print_help()
 
 if __name__ == "__main__":
     main()
