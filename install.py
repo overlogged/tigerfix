@@ -12,7 +12,11 @@ def print_prompt(prompt):
 def main():
     # ArgPasring
     parser = argparse.ArgumentParser()
+
     subparsers = parser.add_subparsers()
+
+    auto_parser = subparsers.add_parser("auto", help = "automatically make, install and clean")
+    auto_parser.set_defaults(func=auto_install)
 
     make_parser = subparsers.add_parser("make", help="build from source code")
     make_parser.set_defaults(func=make)
@@ -22,7 +26,7 @@ def main():
 
     clean_parser = subparsers.add_parser("clean", help="remove builded files")
     clean_parser.set_defaults(func=clean)
-
+    
     # Parsing and Executing
     args = parser.parse_args()
     try:
@@ -39,7 +43,6 @@ def make():
     print_prompt("Make finished!")
 
 def install():
-    make()
     username = os.popen("whoami").read()
 
     if username != "root":
@@ -57,5 +60,10 @@ def clean():
     os.chdir(cwd)
     os.system("rm -rf " + build_folder)
     print_prompt("Cleaning finished!")
+
+def auto_install():
+    make()
+    install()
+    clean()
 
 main()
