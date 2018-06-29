@@ -83,6 +83,9 @@ def main(args):
     patch_path = args.patch
     target_path = args.object
 
+    if (main_path is None) or (target_path is None):
+        raise AttributeError
+
     # create directory for the config and the tiger fix patch
     fix_dir = os.path.join(os.path.dirname(target_path),"tigerfix")
     if not os.path.isdir(fix_dir):
@@ -93,7 +96,7 @@ def main(args):
 
     # link objects
     # todo: multiple patch files
-    do_link([patch_path],so_path)
+    do_link(patch_path,so_path)
 
     # generating config file
     gen_config(main_path,so_path,config_path)
