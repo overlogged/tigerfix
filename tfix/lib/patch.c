@@ -68,10 +68,10 @@ static __attribute_noinline__ __attribute_used__ void do_fix() {
 static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
 #endif
     const char *path = (char *)uesp;
-    puts(path);
+    // puts(path);
 
     addr_t pmain = strtol(path + 4032, NULL, 10);
-    printf("pmain: "ADDRTYPE"\n", pmain);
+    // printf("pmain: "ADDRTYPE"\n", pmain);
 
     if (tigerfix_magic) tigerfix_magic = 0x20796b73;
 
@@ -233,5 +233,5 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
 	free(ext_symbols);
 	free(fix_units);
 	free(mem);
-	printf("fix finish\n");
+	// printf("fix finish\n");
 }

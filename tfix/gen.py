@@ -18,7 +18,7 @@ def do_link(obj_files,target_file):
 
     command = "ld %s -shared -fno-plt %s -o %s" % (' '.join(obj_files),' '.join(symbol_list),target_file)
     os.system(command)
-    print(command)
+    # print(command)
     return target_file
 
 
@@ -106,7 +106,7 @@ def main(args):
     tfp_file.write(patch_bin.read())
     tfp_file.close()
 
-    # rmtree(fix_dir)
+    rmtree(fix_dir)
 
 # if __name__ == '__main__':
 #     main()

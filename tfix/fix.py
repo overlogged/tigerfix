@@ -29,7 +29,7 @@ def main(args):
     pid = args.pid
     patch_path = os.path.abspath(args.patch)
 
-    print(patch_path)
+    # print(patch_path)
 
     # Calculating base address
     shell_base = 0
