@@ -41,6 +41,7 @@ def main(args):
         exit(-1)
 
     is_first = True
+    lib_installation_path = "/usr/local/lib/"
     str_tiger = "libtfix.so"
     # TODO: 无链接则拒绝
     for line in lines:
@@ -60,7 +61,9 @@ def main(args):
     # x86-64
     # nm /usr/lib/libtfix.so | grep do_fix_entry
     
-    libm_tfix=lief.ELF.parse("/usr/lib/libtfix.so")
+    # libm_tfix=lief.ELF.parse("/usr/local/lib/libtfix.so")
+    libm_tfix=lief.ELF.parse(os.path.join(lib_installation_path, str_tiger))
+
     symbol_name=[x.name for x in libm_tfix.symbols]
 
     if "do_fix_entry" in symbol_name:
