@@ -70,12 +70,12 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
     const char *path = (char *)uesp;
     puts(path);
 
-    addr_t pmain = strtol(path + 4064, NULL, 10);
+    addr_t pmain = strtol(path + 4032, NULL, 10);
     printf("pmain: "ADDRTYPE"\n", pmain);
 
     if (tigerfix_magic) tigerfix_magic = 0x20796b73;
 
-    //read config
+    // read config
     FILE *fp = fopen(path, "rb");
     assert(fp != NULL);
     int flag, n, m;
@@ -95,8 +95,8 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
 		assert(fscanf(fp, ADDRTYPE""ADDRTYPE, &addr[i][0], &addr[i][1]) != EOF);
 	}
 
-	//read and generate patch.tfp.so
-	//assert: elf start with 0x7f and there is no 0x7f between config and elf
+	// read and generate patch.tfp.so
+	// assert: elf start with 0x7f and there is no 0x7f between config and elf
 	while(fgetc(fp) != 0x7f);
 	fseek(fp, -1L, SEEK_CUR);
 
@@ -109,7 +109,11 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
 	void *mem = malloc(sizeof(char) * len);
 	assert(fread(mem, len, 1, fp) == 1);
 	strcpy(soname, path);
-	strcpy(soname + strlen(soname) - 23, "patch.tfp.so");	//上级目录位置，文件名为patch.tfp.so
+    size_t slen = strlen(soname);
+    soname[slen++] = '.';
+    soname[slen++] = 's';
+    soname[slen++] = 'o';
+    soname[slen++] = '\0';
 
 	FILE *fpso = fopen(soname, "wb");
     assert(fpso != NULL);

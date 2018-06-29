@@ -7,11 +7,13 @@ import lief
 import platform
 from . import root
 
+
 def wait_stopped(pid):
     while True:
         _, status = os.waitpid(pid, 0)
         if os.WIFSTOPPED(status):
             break
+
 
 def wait_trap(pid):
     while True:
@@ -19,11 +21,15 @@ def wait_trap(pid):
         if os.WIFSTOPPED(status) and os.WSTOPSIG(status) == signal.SIGTRAP:
             break
 
+
 def main(args):
     root.get_root()
 
     # Get parameters from args
     pid = args.pid
+    patch_path = os.path.abspath(args.patch)
+
+    print(patch_path)
 
     # Calculating base address
     shell_base = 0
@@ -59,20 +65,20 @@ def main(args):
                 str_base = line[0:end]
                 shell_base = int(str_base, base=16)
                 break
-    
+
     # x86-64
     # nm /usr/lib/libtfix.so | grep do_fix_entry
-    
-    libm_tfix=lief.ELF.parse(os.path.join(lib_installation_path, str_tiger))
 
-    symbol_name=[x.name for x in libm_tfix.symbols]
+    libm_tfix = lief.ELF.parse(os.path.join(lib_installation_path, str_tiger))
+
+    symbol_name = [x.name for x in libm_tfix.symbols]
 
     if "do_fix_entry" in symbol_name:
-        tfix=libm_tfix.get_symbol("do_fix_entry")
+        tfix = libm_tfix.get_symbol("do_fix_entry")
         temp_address = int(tfix.value)
     else:
         raise NameError("do_fix_entry not found")
-    
+
     do_fix_entry = shell_base + temp_address
 
     # initialize debugger
@@ -80,7 +86,7 @@ def main(args):
 
     # attach the running process (pid)
     process = debugger.addProcess(pid, False)
-    
+
     # next syscall
     ENOSYS = 38
     while True:
@@ -101,28 +107,27 @@ def main(args):
         new_regs.rip = do_fix_entry
         new_regs.rsp = int((new_regs.rsp / 32)) * 32
 
-        process.writeBytes(new_regs.rsp - 4096, "/home/yxy/桌面/tigerfix/yxy.tfp".encode("UTF-8"))
-        process.writeBytes(new_regs.rsp - 32, str(main_base).encode("ASCII"))
+        process.writeBytes(new_regs.rsp - 4096, patch_path.encode())
+        process.writeBytes(new_regs.rsp - 64, str(main_base).encode())
 
         new_regs.rsp -= 4096
         new_regs.rdi = new_regs.rsp
         new_regs.rbp = new_regs.rsp
 
+    elif platform.architecture()[0] == "32bit":
+        # 32 bit
+        new_regs.eip = do_fix_entry
+        new_regs.esp = int((new_regs.esp / 32)) * 32
+
+        process.writeBytes(new_regs.esp - 4096, patch_path.encode())
+        process.writeBytes(new_regs.esp - 64, str(main_base).encode())
+
+        new_regs.esp -= 4096
+        new_regs.ebp = new_regs.esp
+
     else:
-        if platform.architecture()[0] == "32bit":
-            # 32 bit
-            new_regs.eip = do_fix_entry
-            new_regs.esp = int((new_regs.esp / 32)) * 32
+        raise SystemError("Unsupported architecture\n")
 
-            process.writeBytes(new_regs.esp - 4096, "/home/yxy/桌面/git/test/patch.tfp".encode("UTF-8"))
-            process.writeBytes(new_regs.esp - 32, str(main_base).encode("ASCII"))
-
-            new_regs.esp -= 4096
-            new_regs.ebp = new_regs.esp
-
-        else:
-            raise SystemError("Unsupported architecture\n")
-            
     # set new regs
     process.setregs(new_regs)
 

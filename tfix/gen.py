@@ -83,8 +83,6 @@ def main(args):
     patch_path = args.patch
     target_path = args.object
 
-    tfp_file = open(target_path, 'wb')
-
     # create directory for the config and the tiger fix patch
     fix_dir = os.path.join(os.path.dirname(target_path),"tigerfix")
     if not os.path.isdir(fix_dir):
@@ -102,7 +100,8 @@ def main(args):
 
     # concat
     cfg_bin = open(config_path, 'rb')
-    patch_bin = open(patch_path, 'rb')
+    patch_bin = open(so_path, 'rb')
+    tfp_file = open(target_path, 'wb')
     tfp_file.write(cfg_bin.read())
     tfp_file.write(patch_bin.read())
     tfp_file.close()
