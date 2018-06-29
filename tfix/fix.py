@@ -4,6 +4,7 @@ import sys
 import signal
 import os
 import lief
+from . import root
 
 def wait_stopped(pid):
     while True:
@@ -18,6 +19,8 @@ def wait_trap(pid):
             break
 
 def main(args):
+    root.get_root()
+
     # Get parameters from args
     pid = args.pid
 
@@ -56,7 +59,7 @@ def main(args):
                 break
     
     # x86-64
-    # nm /usr/local/lib/libtfix.so | grep do_fix_entry
+    # nm /usr/lib/libtfix.so | grep do_fix_entry
     
     # libm_tfix=lief.ELF.parse("/usr/local/lib/libtfix.so")
     libm_tfix=lief.ELF.parse(os.path.join(lib_installation_path, str_tiger))
