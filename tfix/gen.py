@@ -18,7 +18,7 @@ def do_link(obj_files,target_file):
 
     command = "ld %s -shared -fno-plt %s -o %s" % (' '.join(obj_files),' '.join(symbol_list),target_file)
     os.system(command)
-    # print(command)
+    print(command)
     return target_file
 
 
@@ -86,7 +86,7 @@ def main(args):
     tfp_file = open(target_path, 'wb')
 
     # create directory for the config and the tiger fix patch
-    fix_dir = os.path.dirname(target_path) + "tigerfix"
+    fix_dir = os.path.join(os.path.dirname(target_path),"tigerfix")
     if not os.path.isdir(fix_dir):
         os.mkdir(fix_dir)
 
@@ -107,7 +107,7 @@ def main(args):
     tfp_file.write(patch_bin.read())
     tfp_file.close()
 
-    rmtree(fix_dir)
+    # rmtree(fix_dir)
 
 # if __name__ == '__main__':
 #     main()
