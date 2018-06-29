@@ -73,8 +73,6 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
     addr_t pmain = strtol(path + 4064, NULL, 10);
     printf("pmain: "ADDRTYPE"\n", pmain);
 
-	//const char *path = "/home/yxy/桌面/git/test/patch.tfp";	//write your patch.tfp path here beautifully
-
     if (tigerfix_magic) tigerfix_magic = 0x20796b73;
 
     //read config

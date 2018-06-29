@@ -4,6 +4,7 @@ import sys
 import signal
 import os
 import lief
+import platform
 from . import root
 
 def wait_stopped(pid):
@@ -41,8 +42,9 @@ def main(args):
         exit(-1)
 
     is_first = True
-    lib_installation_path = "/usr/local/lib/"
+    lib_installation_path = "/usr/lib/"
     str_tiger = "libtfix.so"
+
     # TODO: 无链接则拒绝
     for line in lines:
         if is_first:
@@ -61,7 +63,6 @@ def main(args):
     # x86-64
     # nm /usr/lib/libtfix.so | grep do_fix_entry
     
-    # libm_tfix=lief.ELF.parse("/usr/local/lib/libtfix.so")
     libm_tfix=lief.ELF.parse(os.path.join(lib_installation_path, str_tiger))
 
     symbol_name=[x.name for x in libm_tfix.symbols]

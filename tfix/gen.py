@@ -57,7 +57,7 @@ def gen_config(main_path,so_path,config_path):
     globaladdr=[]
     for y in globalname:
         globaladdr.append(hex_64bit(libm_main.get_symbol(y).value))
-        #print(libm_main.get_symbol(y))
+        # print(libm_main.get_symbol(y))
 
     got_addr=[]
     relocate=list(libm_patch.relocations)

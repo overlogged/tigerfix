@@ -36,6 +36,7 @@ def main():
     # Parser for Fixing
     fix_parser = subparsers.add_parser("fix", help="fix your process with generated patch")
     fix_parser.add_argument("pid", help="the process id of which process you want to hotfix", type=int)
+    fix_parser.add_argument("patch path",help="the path of the patch file")
     fix_parser.set_defaults(func=check(fix.main))
 
     # Parser for Patch Generating
