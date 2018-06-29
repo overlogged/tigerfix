@@ -8,23 +8,72 @@
 #include <string.h>
 #include <assert.h>
 
-typedef u_int64_t ptr_t;
+#ifdef __i386__
 
+#include <stddef.h>
+#define RIP(R) (R).eip
+#define RAX(R) (R).eax
+#define RDI(R) (R).edi
+#define RSP(R) (R).esp
+#define REGS_RAX regs.eax
+#define ADDRTYPE "%x"
+typedef u_int32_t addr_t;
+
+#elif defined(__x86_64__)
+
+#define RIP(R) (R).rip
+#define RAX(R) (R).rax
+#define RDI(R) (R).rdi
+#define RSP(R) (R).rsp
+#define REGS_RAX regs.rax
+#define ADDRTYPE "%lx"
+typedef u_int64_t addr_t;
+
+#else
+
+#error Unsupported architecture
+
+#endif
+
+typedef addr_t ptr_t;
+
+
+#ifdef __i386__
+addr_t uesp;
 __asm__(
 ".global do_fix_entry\n\t"
 "do_fix_entry:\n\t"
+"mov %esp,uesp\n\t"
+"call do_fix\n\t"
+"int $0x3\n\t"
+);
+#elif defined(__x86_64__)
+__asm__(
+".global do_fix_entry\n\t"
+"do_fix_entry:\n\t"
+//"mov %rsp,uesp\n\t"
 "callq do_fix\n\t"
 "int $0x3\n\t"
 );
+#endif
+
 
 __attribute_used__ __uint64_t tigerfix_magic = 0x20796b73;
 
 char soname[4096];
 
-static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
+#ifdef __i386__
+static __attribute_noinline__ __attribute_used__ void do_fix() {
+#elif defined(__x86_64__)
+static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
+#endif
+    const char *path = (char *)uesp;
+    puts(path);
 
-	const char *path = "./patch.tfp";	// write your patch.tfp path here beautifully
-    //const char* path = "./patch.tfp";
+    addr_t pmain = strtol(path + 4064, NULL, 10);
+    printf("pmain: "ADDRTYPE"\n", pmain);
+
+	//const char *path = "/home/yxy/桌面/git/test/patch.tfp";	//write your patch.tfp path here beautifully
 
     if (tigerfix_magic) tigerfix_magic = 0x20796b73;
 
@@ -32,20 +81,20 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
     FILE *fp = fopen(path, "rb");
     assert(fp != NULL);
     int flag, n, m;
-	u_int64_t (*sym)[2], (*addr)[2];
+	addr_t (*sym)[2], (*addr)[2];
 
 	assert(fscanf(fp, "%d%d", &flag, &n) != EOF);
 
-	sym = (u_int64_t(*)[2])malloc(sizeof(u_int64_t) * 2 * n);
+	sym = (addr_t(*)[2])malloc(sizeof(addr_t) * 2 * n);
 	for(int i = 0; i < n; i ++){
-		assert(fscanf(fp, "%lx%lx", &sym[i][0], &sym[i][1]) != EOF);
+		assert(fscanf(fp, ADDRTYPE""ADDRTYPE, &sym[i][0], &sym[i][1]) != EOF);
 	}
 
 	assert(fscanf(fp, "%d", &m) != EOF);
 
-    addr = (u_int64_t(*)[2])malloc(sizeof(u_int64_t) * 2 * m);
+    addr = (addr_t(*)[2])malloc(sizeof(addr_t) * 2 * m);
 	for(int i = 0; i < m; i ++) {
-		assert(fscanf(fp, "%lx%lx", &addr[i][0], &addr[i][1]) != EOF);
+		assert(fscanf(fp, ADDRTYPE""ADDRTYPE, &addr[i][0], &addr[i][1]) != EOF);
 	}
 
 	//read and generate patch.tfp.so
@@ -62,7 +111,7 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
 	void *mem = malloc(sizeof(char) * len);
 	assert(fread(mem, len, 1, fp) == 1);
 	strcpy(soname, path);
-	strcat(soname, ".so");
+	strcpy(soname + strlen(soname) - 23, "patch.tfp.so");	//上级目录位置，文件名为patch.tfp.so
 
 	FILE *fpso = fopen(soname, "wb");
     assert(fpso != NULL);
@@ -82,7 +131,7 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
     int rc;
 
     // get main_info
-    rc = dladdr(pmain, &main_info);
+    rc = dladdr((const void *)pmain, &main_info);
     if (!rc) {
         fprintf(stderr, "%s\n", dlerror());
         exit(-1);
@@ -123,12 +172,10 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
 
         void *pg = (void *) ((ptr_t) p_got_item & ~(pagesize - 1));
         mprotect(pg, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
-        mprotect(pg + pagesize, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
 
         *p_got_item = real_addr;
 
 		mprotect(pg, pagesize, PROT_READ | PROT_EXEC);
-        mprotect(pg + pagesize, pagesize, PROT_READ | PROT_EXEC);
     }
 
     // fix
@@ -137,12 +184,26 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
         ptr_t old_func = main_base + fix_units[2 * i];
         ptr_t new_func = so_base + fix_units[2 * i + 1];
 
-        void *pg = (void *) (old_func & ~(pagesize - 1));
-        mprotect(pg, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
-        mprotect(pg + pagesize, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
+        void *pg1 = (void *) (old_func & ~(pagesize - 1));
+        void *pg2 = (void *) ((old_func + 16) & ~(pagesize - 1));
+
+        mprotect(pg1, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
+        if(pg2 != pg1) mprotect(pg2, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
 
         // modify entry
         u_int8_t *old_entry = (u_int8_t *) old_func;
+
+#ifdef __i386__
+
+        // jmp new_func
+        old_entry[0] = 0xe9;
+        *((ptr_t *) (old_entry + 1)) = (char *)new_func - (char *)old_entry - 5;
+
+        // nop
+        //old_entry[5] = old_entry[6] = old_entry[7] = 0x90;
+
+
+#elif defined(__x86_64__)
 
         // push %rax
         old_entry[0] = 0x50;
@@ -159,8 +220,10 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
         // nop
         old_entry[13] = old_entry[14] = old_entry[15] = 0x90;
 
-        mprotect(pg, pagesize, PROT_READ | PROT_EXEC);
-        mprotect(pg + pagesize, pagesize, PROT_READ | PROT_EXEC);
+#endif
+
+        mprotect(pg1, pagesize, PROT_READ | PROT_EXEC);
+        if(pg1 != pg2) mprotect(pg2, pagesize, PROT_READ | PROT_EXEC);
 
     }
 	free(sym);
@@ -168,4 +231,5 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *pmain) {
 	free(ext_symbols);
 	free(fix_units);
 	free(mem);
+	printf("fix finish\n");
 }

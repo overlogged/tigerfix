@@ -92,12 +92,33 @@ def main(args):
 
     # set regs
     new_regs = process.getregs()
+    if platform.architecture()[0] == "64bit":
+        # 64 bit
+        new_regs.rip = do_fix_entry
+        new_regs.rsp = int((new_regs.rsp / 32)) * 32
 
-    # 32 bit && 64 bit
-    new_regs.rdi = main_base
-    new_regs.rip = do_fix_entry
-    new_regs.rsp = int((new_regs.rsp / 32)) * 32
+        process.writeBytes(new_regs.rsp - 4096, "/home/yxy/桌面/tigerfix/yxy.tfp".encode("UTF-8"))
+        process.writeBytes(new_regs.rsp - 32, str(main_base).encode("ASCII"))
 
+        new_regs.rsp -= 4096
+        new_regs.rdi = new_regs.rsp
+        new_regs.rbp = new_regs.rsp
+
+    else:
+        if platform.architecture()[0] == "32bit":
+            # 32 bit
+            new_regs.eip = do_fix_entry
+            new_regs.esp = int((new_regs.esp / 32)) * 32
+
+            process.writeBytes(new_regs.esp - 4096, "/home/yxy/桌面/git/test/patch.tfp".encode("UTF-8"))
+            process.writeBytes(new_regs.esp - 32, str(main_base).encode("ASCII"))
+
+            new_regs.esp -= 4096
+            new_regs.ebp = new_regs.esp
+
+        else:
+            raise SystemError("Unsupported architecture\n")
+            
     # set new regs
     process.setregs(new_regs)
 
