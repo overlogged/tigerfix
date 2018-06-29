@@ -1,26 +1,30 @@
 import os
 import lief
 import argparse
+from shutil import rmtree
 
 def hex_64bit(some_int):
     ans = format(some_int, "x")
     ans = ans.zfill(16) # 64 bit is 16 digits long in hex
     return ans
 
-def main(args):
-    # Get parameters from args
-    main_path = args.main
-    patch_path = args.patch
-    
-    # Create directory for the config and the tiger fix patch
-    fix_dir = os.path.join(os.path.dirname(main_path), "tigerfix_temp")
-    if not os.path.isdir(fix_dir):
-        os.mkdir(fix_dir)
-    config_filename = os.path.join(fix_dir, "config")
-    tiger_fix_patch_path = os.path.join(fix_dir, "patch.tfp")
+def do_link(obj_files,target_file):
+    symbol_list = []
+    for file in obj_files:
+        libm_patch = lief.ELF.parse(file)
+        for x in libm_patch.relocations:
+            if x.symbol.name!='':
+                symbol_list.append("--defsym %s=0xc0ffee"%x.symbol.name)
 
+    command = "ld %s -shared -fno-plt %s -o %s" % (' '.join(obj_files),' '.join(symbol_list),target_file)
+    os.system(command)
+    # print(command)
+    return target_file
+
+
+def gen_config(main_path,so_path,config_path):
     libm_main = lief.ELF.parse(main_path)
-    libm_patch = lief.ELF.parse(patch_path)
+    libm_patch = lief.ELF.parse(so_path)
 
     header_main = libm_main.header
     signal = str(header_main.file_type).split('.')[1]
@@ -48,7 +52,7 @@ def main(args):
 
     globalname=[]
     for x in libm_symname:
-        if(libm_patch.get_symbol(x).value==int("c0ffee",16)):
+        if(libm_patch.get_symbol(x).value==0xc0ffee):
             globalname.append(x)
     globaladdr=[]
     for y in globalname:
@@ -62,8 +66,7 @@ def main(args):
             if relocate[i].symbol.name==name:
                 got_addr.append(hex_64bit((relocate[i].address)))
 
-    # generating config file
-    configfile = open(config_filename, "w")
+    configfile = open(config_path, "w")
     configfile.write("%d\n" % sig)
     configfile.write("%d\n" % len(globalname))
     for i in range(len(globaladdr)):
@@ -72,13 +75,39 @@ def main(args):
     for i in range(len(func_addr)):
         configfile.write(func_addr[i] + ' ' + fixfunc_addr[i] + '\n')
     configfile.close()
-    # os.system("cat " + config_filename + ' ' + patch_path + ' > ' + tiger_fix_patch_path)
-    tfp_file = open(tiger_fix_patch_path, 'wb')
-    cfg_bin = open(config_filename, 'rb')
+
+def main(args):
+
+    # get parameters from args
+    main_path = args.main
+    patch_path = args.patch
+    target_path = args.object
+
+    tfp_file = open(target_path, 'wb')
+
+    # create directory for the config and the tiger fix patch
+    fix_dir = os.path.dirname(target_path) + "tigerfix"
+    if not os.path.isdir(fix_dir):
+        os.mkdir(fix_dir)
+
+    config_path = os.path.join(fix_dir, "config")
+    so_path = os.path.join(fix_dir, "patch.so")
+
+    # link objects
+    # todo: multiple patch files
+    do_link([patch_path],so_path)
+
+    # generating config file
+    gen_config(main_path,so_path,config_path)
+
+    # concat
+    cfg_bin = open(config_path, 'rb')
     patch_bin = open(patch_path, 'rb')
     tfp_file.write(cfg_bin.read())
     tfp_file.write(patch_bin.read())
     tfp_file.close()
+
+    rmtree(fix_dir)
 
 # if __name__ == '__main__':
 #     main()

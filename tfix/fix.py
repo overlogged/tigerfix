@@ -4,6 +4,7 @@ import sys
 import signal
 import os
 import lief
+from . import root
 
 def wait_stopped(pid):
     while True:
@@ -18,6 +19,8 @@ def wait_trap(pid):
             break
 
 def main(args):
+    root.get_root()
+
     # Get parameters from args
     pid = args.pid
 
@@ -40,7 +43,6 @@ def main(args):
     is_first = True
     str_tiger = "libtfix.so"
     # TODO: 无链接则拒绝
-    # TODO: 静态链接不能拒绝
     for line in lines:
         if is_first:
             end = line.find('-')
@@ -56,9 +58,9 @@ def main(args):
                 break
     
     # x86-64
-    # nm /usr/local/lib/libtfix.so | grep do_fix_entry
+    # nm /usr/lib/libtfix.so | grep do_fix_entry
     
-    libm_tfix=lief.ELF.parse("/usr/local/lib/libtfix.so")
+    libm_tfix=lief.ELF.parse("/usr/lib/libtfix.so")
     symbol_name=[x.name for x in libm_tfix.symbols]
 
     if "do_fix_entry" in symbol_name:
