@@ -1,7 +1,7 @@
 all:obj/patch.tfp
 
 obj/patch.tfp:obj/main obj/patch.o
-	tfix gen -m obj/main -p obj/patch.o -o obj/patch.tfp
+	tfix gen -m obj/main obj/patch.o -o obj/patch.tfp
 
 obj/main:main.c
 	mkdir -p obj
