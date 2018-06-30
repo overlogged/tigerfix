@@ -10,12 +10,12 @@ dir_lib = prefix + '/lib'
 dir_include = prefix + '/include/tigerfix'
 
 def main(args):
-    root.get_root()
     patch_c = resource_filename(__name__, 'lib/patch.c')
     patch_so = patch_c.replace('lib/patch.c','lib/libtfix.so')
     system("gcc %s -shared -fPIC -O2 -ldl -o %s" % (patch_c,patch_so))
     dev_h = resource_filename(__name__, 'include/dev.h')
     def_h = resource_filename(__name__, 'include/def.h')
+    root.get_root()
 
     copy2(patch_so,dir_lib)
     print('runtime library installed.')

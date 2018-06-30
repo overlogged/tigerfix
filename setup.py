@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='tigerfix',
-    version='0.1',
+    version='0.1.1',
     description='A hot fix tool for compiled languages such as c and c++.',
     long_description=open("README.rst").read(),
     url='https://github.com/NiceKingWei/tigerfix',
