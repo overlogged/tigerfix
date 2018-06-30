@@ -11,6 +11,7 @@ setup(
     license='GPL-3.0',
     keywords='hotfix c cpp',
     install_requires=['lief>=0.9.0', 'python-ptrace>=0.9.3'],
+    author_email='nicekingwei@foxmail.com',
     packages=['tfix'],
     package_data={
         '': ['include/*.h', 'lib/*.c']
