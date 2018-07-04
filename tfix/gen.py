@@ -2,6 +2,8 @@ import os
 import argparse
 from shutil import rmtree
 
+import elftools.elf.elffile as ef
+
 def hex_64bit(some_int):
     ans = format(some_int, "x")
     ans = ans.zfill(16) # 64 bit is 16 digits long in hex
@@ -85,6 +87,24 @@ def main(args):
     if (main_path is None) or (target_path is None):
         raise AttributeError
 
+    # preparation
+    elf_file_patch = ef.ELFFile(open(patch_path, 'rb'))
+    elf_file_main = ef.ELFFile(open(main_path, 'rb'))
+
+    reladyn_name = '.rela.dyn'
+    sym_name = '.symtab'
+    relaplt_name = '.rela.plt'
+    dynsym = '.dynsym'
+
+    reladyn_patch = elf_file_patch.get_section_by_name(reladyn_name)
+    symtab_patch = elf_file_patch.get_section_by_name(sym_name)
+    relaplt_patch = elf_file_patch.get_section_by_name(relaplt_name)
+    dynsym_patch = elf_file_patch.get_section_by_name(dynsym)
+
+    symtab_main = elf_file_main.get_section_by_name(sym_name)
+
+    ####################################
+    
     # create directory for the config and the tiger fix patch
     fix_dir = os.path.join(os.path.dirname(target_path),"tigerfix")
     if not os.path.isdir(fix_dir):
