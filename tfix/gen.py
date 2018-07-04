@@ -115,17 +115,19 @@ def main(args):
         sig=1
 
     #write
+    print(target_path)
     configfile = open(target_path,'w+')
     configfile.write('%d\n'%sig)
+    print(sig)
     configfile.write("%d\n"%len(extern_name))
+    print(extern_name)
     for i in range(len(main_exaddr)):
         configfile.write(hex(got_addr[i])[2:]+' '+hex(main_exaddr[i])[2:]+'\n')
+        print(hex(got_addr[i])[2:]+' '+hex(main_exaddr[i])[2:]+'\n')
     configfile.write("%d\n"%len(patchfunc_addr))
     for i in range(len(patchfunc_addr)):
         configfile.write(hex(mainfunc_addr[i])[2:]+' '+hex(patchfunc_addr[i])[2:]+'\n')
+        print(hex(mainfunc_addr[i])[2:]+' '+hex(patchfunc_addr[i])[2:]+'\n')
     configfile.close()
     # concat
     rmtree(fix_dir)
-
-# if __name__ == '__main__':
-#     main()
