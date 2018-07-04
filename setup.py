@@ -4,13 +4,13 @@ from setuptools import setup, find_packages
 
 setup(
     name='tigerfix',
-    version='0.1.1',
+    version='0.1.2',
     description='A hot fix tool for compiled languages such as c and c++.',
     long_description=open("README.rst").read(),
     url='https://github.com/NiceKingWei/tigerfix',
     license='GPL-3.0',
     keywords='hotfix c cpp',
-    install_requires=['lief>=0.9.0', 'python-ptrace>=0.9.3'],
+    install_requires=['python-ptrace>=0.9.3','pyelftools >= 0.2'],
     author_email='nicekingwei@foxmail.com',
     packages=['tfix'],
     package_data={

@@ -13,7 +13,7 @@ from . import install
 
 def check(f):
     def g(arg):
-        if not (os.path.exists('/usr/lib/libtfix.so') and os.path.exists('/usr/include/dev.h') and os.path.exists('/usr/include/def.h')):
+        if not (os.path.exists('/usr/lib/libtfix.so') and os.path.exists('/usr/include/tigerfix/dev.h') and os.path.exists('/usr/include/tigerfix/def.h')):
             print('please install the runtime library and c/c++ header files at first.')
             install.main(arg)
         f(arg)

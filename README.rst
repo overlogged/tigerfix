@@ -12,7 +12,7 @@ Installation
 
 .. code::
 
-    pip3 install dist/tigerfix-0.1.tar.gz
+    pip3 install dist/tigerfix-0.1.2.tar.gz
 
 Usage
 ------------
