@@ -4,79 +4,6 @@ from shutil import rmtree
 
 import elftools.elf.elffile as ef
 
-def hex_64bit(some_int):
-    ans = format(some_int, "x")
-    ans = ans.zfill(16) # 64 bit is 16 digits long in hex
-    return ans
-
-def do_link(obj_files,target_file):
-    symbol_list = []
-    for file in obj_files:
-        libm_patch = lief.ELF.parse(file)
-        for x in libm_patch.relocations:
-            if x.symbol.name!='':
-                symbol_list.append("--defsym %s=0xc0ffee"%x.symbol.name)
-
-    command = "ld %s -shared -fno-plt %s -o %s" % (' '.join(obj_files),' '.join(symbol_list),target_file)
-    os.system(command)
-    # print(command)
-    return target_file
-
-
-def gen_config(main_path,so_path,config_path):
-    libm_main = lief.ELF.parse(main_path)
-    libm_patch = lief.ELF.parse(so_path)
-
-    header_main = libm_main.header
-    signal = str(header_main.file_type).split('.')[1]
-    if signal == 'EXECUTABLE' :
-        sig = 0
-    else:
-        sig = 1
-
-    libm_symname = [x.name for x in libm_patch.symbols]
-    libm_symname=set(libm_symname)
-
-    fixfunc = []
-    fixfunc_addr = []
-    for x in libm_symname:
-        if x[:4] == 'fix_':
-            fixfunc_addr.append(hex_64bit(libm_patch.get_symbol(x).value))
-            fixfunc.append(x[4:])
-
-    func_addr = []
-    for y in fixfunc:
-        try:
-            func_addr.append(hex_64bit(libm_main.get_symbol(y).value))
-        except e:
-            raise NameError("Symbols not found:%s" % e)
-
-    globalname=[]
-    for x in libm_symname:
-        if(libm_patch.get_symbol(x).value==0xc0ffee):
-            globalname.append(x)
-    globaladdr=[]
-    for y in globalname:
-        globaladdr.append(hex_64bit(libm_main.get_symbol(y).value))
-        # print(libm_main.get_symbol(y))
-
-    got_addr=[]
-    relocate=list(libm_patch.relocations)
-    for name in globalname:
-        for i in range(len(globalname)):
-            if relocate[i].symbol.name==name:
-                got_addr.append(hex_64bit((relocate[i].address)))
-
-    configfile = open(config_path, "w")
-    configfile.write("%d\n" % sig)
-    configfile.write("%d\n" % len(globalname))
-    for i in range(len(globaladdr)):
-        configfile.write(got_addr[i] + ' ' + globaladdr[i] + '\n')
-    configfile.write("%d\n" % len(func_addr))
-    for i in range(len(func_addr)):
-        configfile.write(func_addr[i] + ' ' + fixfunc_addr[i] + '\n')
-    configfile.close()
-
 def main(args):
 
     # get parameters from args
@@ -103,32 +30,58 @@ def main(args):
 
     symtab_main = elf_file_main.get_section_by_name(sym_name)
 
-    ####################################
-    
-    # create directory for the config and the tiger fix patch
-    fix_dir = os.path.join(os.path.dirname(target_path),"tigerfix")
-    if not os.path.isdir(fix_dir):
-        os.mkdir(fix_dir)
 
-    config_path = os.path.join(fix_dir, "config")
-    so_path = os.path.join(fix_dir, "patch.so")
+    # first tab
+    extern_name = []
+    main_exaddr = []
+    got = []#(name ,addr)
+    for sym in symtab_patch.iter_symbols():
+        if(sym.entry['st_value']==int('c0ffee',16)):
+            extern_name.append(sym.name)
+    for name in extern_name:
+        main_exaddr.append(symtab_main.get_symbol_by_name(name)[0].entry['st_value'])
 
-    # link objects
-    # todo: multiple patch files
-    do_link(patch_path,so_path)
 
-    # generating config file
-    gen_config(main_path,so_path,config_path)
+    for reloc in reladyn_patch.iter_relocations():
+                # Relocation entry attributes are available through item lookup
+                addr = reloc['r_offset']
+                name = dynsym_patch.get_symbol(reloc['r_info_sym']).name
+                got.append((name, addr))
+    for reloc in relaplt_patch.iter_relocations():
+                # Relocation entry attributes are available through item lookup
+                addr = reloc['r_offset']
+                name = dynsym_patch.get_symbol(reloc['r_info_sym']).name
+                got.append((name, addr))
+    got_addr=[]
+    for name in extern_name:
+        for name_got,addr_got in got:
+            if(name_got==name):
+                got_addr.append(addr_got)
 
-    # concat
-    cfg_bin = open(config_path, 'rb')
-    patch_bin = open(so_path, 'rb')
-    tfp_file = open(target_path, 'wb')
-    tfp_file.write(cfg_bin.read())
-    tfp_file.write(patch_bin.read())
-    tfp_file.close()
+    # second tab
+    oldfunc_name=[]
+    patchfunc_addr=[]
+    mainfunc_addr=[]
+    for func in symtab_patch.iter_symbols():
+        if(func.name[:4]=='fix_'):
+            oldfunc_name.append(func.name[4:])
+            patchfunc_addr.append(func.entry['st_value'])
+    for name in oldfunc_name:
+        mainfunc_addr.append(symtab_main.get_symbol_by_name(name)[0].entry['st_value'])
 
-    rmtree(fix_dir)
-
-# if __name__ == '__main__':
-#     main()
+    # file type
+    if(elf_file_main.header['e_type']=='ET_EXEC'):
+        sig=0
+    else:
+        sig=1
+        
+    # write
+    f=open(target_path, 'w+')
+    f.write('%d\n'%sig)
+    f.write("%d\n"%len(extern_name))
+    for i in range(len(main_exaddr)):
+        f.write(hex(got_addr[i])[2:]+' '+hex(main_exaddr[i])[2:]+'\n')
+    f.write("%d\n"%len(patchfunc_addr))
+    for i in range(len(patchfunc_addr)):
+        f.write(hex(mainfunc_addr[i])[2:]+' '+hex(patchfunc_addr[i])[2:]+'\n')
+    f.close()
