@@ -1,5 +1,4 @@
 import os
-import lief
 import argparse
 from shutil import rmtree
 
