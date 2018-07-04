@@ -51,6 +51,7 @@ def main(args):
     # todo: multiple patch files
     do_link(patch_path,so_path)
 
+    print('54')
     # generating config file
     a=open(so_path,'rb')
     b=open(main_path,'rb')
@@ -80,7 +81,7 @@ def main(args):
     for name in extern_name:
         main_exaddr.append(symtab_main.get_symbol_by_name(name)[0].entry['st_value'])
 
-
+    print('84')
     for reloc in reladyn_patch.iter_relocations():
                 # Relocation entry attributes are available through item lookup
                 addr = reloc['r_offset']
@@ -114,6 +115,7 @@ def main(args):
     else:
         sig=1
 
+    print('118')
     #write
     print(target_path)
     configfile = open(target_path,'w+')
