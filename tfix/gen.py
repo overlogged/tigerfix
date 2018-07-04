@@ -1,7 +1,7 @@
 import os
 import argparse
 from shutil import rmtree
-
+import elftools.elf.elffile as ef
 def hex_64bit(some_int):
     ans = format(some_int, "x")
     ans = ans.zfill(16) # 64 bit is 16 digits long in hex
@@ -10,11 +10,20 @@ def hex_64bit(some_int):
 def do_link(obj_files,target_file):
     symbol_list = []
     for file in obj_files:
-        libm_patch = lief.ELF.parse(file)
-        for x in libm_patch.relocations:
-            if x.symbol.name!='':
-                symbol_list.append("--defsym %s=0xc0ffee"%x.symbol.name)
+        elffile_patch = ef.ELFFile(file)
+        reladyn_patch = elffile_patch.get_section_by_name('.rela.dyn')
+        relaplt_patch = elffile_patch.get_section_by_name('.rela.plt')
+        dynsym_patch = elffile_patch.get_section_by_name('dynsym')
+        for reloc in reladyn_patch.iter_relocations():
+            name = dynsym_patch.get_symbol(reloc['r_info_sym']).name
+            if name!='':
+                symbol_list.append("--defsym %s=0xc0ffee"%name)
+        for reloc in relaplt_patch.iter_relocations():
+            name = dynsym_patch.get_symbol(reloc['r_info_sym']).name
+            if name!='':
+                symbol_list.append("--defsym %s=0xc0ffee"%name)
 
+	 
     command = "ld %s -shared -fno-plt %s -o %s" % (' '.join(obj_files),' '.join(symbol_list),target_file)
     os.system(command)
     # print(command)
@@ -22,7 +31,6 @@ def do_link(obj_files,target_file):
 
 
 def gen_config(main_path,so_path,config_path):
-    import elftools.elf.elffile as ef
     a=open(so_path,'rb')
     b=open(main_path,'rb')
     #prepare

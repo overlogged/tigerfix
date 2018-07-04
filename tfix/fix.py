@@ -4,6 +4,7 @@ import sys
 import signal
 import os
 import platform
+import elftools.elf.elffile as ef
 from . import root
 
 
@@ -68,13 +69,13 @@ def main(args):
     # x86-64
     # nm /usr/lib/libtfix.so | grep do_fix_entry
 
-    libm_tfix = lief.ELF.parse(os.path.join(lib_installation_path, str_tiger))
-
-    symbol_name = [x.name for x in libm_tfix.symbols]
-
+    elffile_tfix = ef.ELFFile(os.path.join(lib_installation_path, str_tiger))
+    elffile_sym = elffile_tfix.get_section_by_name('.symtab')
+    symbol_name = [x.name for x in elffile_sym.iter_symbols()]
     if "do_fix_entry" in symbol_name:
-        tfix = libm_tfix.get_symbol("do_fix_entry")
-        temp_address = int(tfix.value)
+        for x in elffile_sym.iter_symbols():
+         if x.name=="do_fix_entry":
+          temp_address = x.entry['st_value']
     else:
         raise NameError("do_fix_entry not found")
 
