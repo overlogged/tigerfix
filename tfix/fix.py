@@ -3,7 +3,6 @@ import subprocess
 import sys
 import signal
 import os
-import lief
 import platform
 from . import root
 
