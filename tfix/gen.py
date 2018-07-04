@@ -29,8 +29,29 @@ def do_link(obj_files,target_file):
     # print(command)
     return target_file
 
+def main(args):
 
-def gen_config(main_path,so_path,config_path):
+    # get parameters from args
+    main_path = args.main
+    patch_path = args.patch
+    target_path = args.object
+
+    if (main_path is None) or (target_path is None):
+        raise AttributeError
+
+    # create directory for the config and the tiger fix patch
+    fix_dir = os.path.join(os.path.dirname(target_path),"tigerfix")
+    if not os.path.isdir(fix_dir):
+        os.mkdir(fix_dir)
+
+    config_path = os.path.join(fix_dir, "config")
+    so_path = os.path.join(fix_dir, "patch.so")
+
+    # link objects
+    # todo: multiple patch files
+    do_link(patch_path,so_path)
+
+    # generating config file
     a=open(so_path,'rb')
     b=open(main_path,'rb')
     #prepare
@@ -94,7 +115,7 @@ def gen_config(main_path,so_path,config_path):
         sig=1
 
     #write
-    configfile=open(config_path,'w+')
+    configfile = open(target_path,'w+')
     configfile.write('%d\n'%sig)
     configfile.write("%d\n"%len(extern_name))
     for i in range(len(main_exaddr)):
@@ -103,40 +124,7 @@ def gen_config(main_path,so_path,config_path):
     for i in range(len(patchfunc_addr)):
         configfile.write(hex(mainfunc_addr[i])[2:]+' '+hex(patchfunc_addr[i])[2:]+'\n')
     configfile.close()
-
-def main(args):
-
-    # get parameters from args
-    main_path = args.main
-    patch_path = args.patch
-    target_path = args.object
-
-    if (main_path is None) or (target_path is None):
-        raise AttributeError
-
-    # create directory for the config and the tiger fix patch
-    fix_dir = os.path.join(os.path.dirname(target_path),"tigerfix")
-    if not os.path.isdir(fix_dir):
-        os.mkdir(fix_dir)
-
-    config_path = os.path.join(fix_dir, "config")
-    so_path = os.path.join(fix_dir, "patch.so")
-
-    # link objects
-    # todo: multiple patch files
-    do_link(patch_path,so_path)
-
-    # generating config file
-    gen_config(main_path,so_path,config_path)
-
     # concat
-    cfg_bin = open(config_path, 'rb')
-    patch_bin = open(so_path, 'rb')
-    tfp_file = open(target_path, 'wb')
-    tfp_file.write(cfg_bin.read())
-    tfp_file.write(patch_bin.read())
-    tfp_file.close()
-
     rmtree(fix_dir)
 
 # if __name__ == '__main__':
