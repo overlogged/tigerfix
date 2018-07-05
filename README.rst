@@ -1,18 +1,19 @@
 TigerFix
 =========
 
-Build
+Build from source
 ---------
 .. code::
 
-    python3 setup.py sdist bdist_wheel 
+    python3 setup.py sdist 
+    pip3 install dist/tigerfix-0.1.2.tar.gz
 
 Installation
 ------------
 
 .. code::
 
-    pip3 install dist/tigerfix-0.1.2.tar.gz
+    pip3 install tigerfix
 
 Usage
 ------------
