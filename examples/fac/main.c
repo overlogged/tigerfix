@@ -30,7 +30,7 @@ void fac(){
 	for(i=1;i<100000;i++)
 	{sleep(10);
 	n=factorial(i);
-	printf("%d\n",i);
+	printf("%d\n",n);
 	}
 } 
 

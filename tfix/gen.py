@@ -10,6 +10,17 @@ def hex_64bit(some_int):
 def do_link(obj_files,target_file):
     symbol_list = []
     for file in obj_files:
+        patch_o_path = file
+        tmp_so_path = file.split('.')[0]+".so"
+        os.system("gcc %s -shared -o %s" % (patch_o_path, tmp_so_path))
+        output = os.popen("nm -u %s" % tmp_so_path)
+        lines = output.readlines()
+        nouse_symbol = []
+        for line in lines:
+           if not "__" in line:
+            if  "@@" in line:
+               nouse_symbol.append(line.split()[1].split("@@")[0])
+        os.system("rm "+tmp_so_path)
         a=open(file,'rb')
         elffile_patch = ef.ELFFile(a)
         text_patch = elffile_patch.get_section_by_name('.rela.text')
@@ -21,8 +32,10 @@ def do_link(obj_files,target_file):
         sym_patch = elffile_patch.get_section_by_name('.symtab')
         for reloc in text_patch.iter_relocations():
             name = sym_patch.get_symbol(reloc['r_info_sym']).name
-            if name!='':
-                symbol_list.append("--defsym %s=0xc0ffee"%name)
+            if name not in nouse_symbol:
+                if(name[0]!='.'):
+                  if name!='':
+                     symbol_list.append("--defsym %s=0xc0ffee"%name)
 
 	 
     command = "ld %s -shared -fno-plt %s -o %s" % (' '.join(obj_files),' '.join(symbol_list),target_file)
