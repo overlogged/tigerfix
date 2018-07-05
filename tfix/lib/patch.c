@@ -71,7 +71,10 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
     puts(path);
 
     addr_t pmain = strtol(path + 4032, NULL, 10);
+
+    #ifdef DEBUG
     printf("pmain: "ADDRTYPE"\n", pmain);
+    #endif
 
     if (tigerfix_magic) tigerfix_magic = 0x20796b73;
 
@@ -234,5 +237,8 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
 	free(ext_symbols);
 	free(fix_units);
 	free(mem);
+    
+    #ifdef DEBUG
 	printf("fix finish\n");
+    #endif
 }
