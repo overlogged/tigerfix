@@ -88,6 +88,7 @@ def main(args):
     process = debugger.addProcess(pid, False)
 
     # next syscall
+    # print("wait a syscall")
     ENOSYS = 38
     while True:
         process.syscall()
@@ -133,6 +134,7 @@ def main(args):
 
     process.cont()
 
+    # print("wait a trap")
     # process.waitSignals(signal.SIGTRAP, signal.SIGSTOP)
     wait_trap(pid)
 

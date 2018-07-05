@@ -71,16 +71,19 @@ def main(args):
     # prepare
     elffile_patch = elf.ELFFile(a)
     elffile_main = elf.ELFFile(b)
+    
     if elffile_patch.elfclass==64:
-     reladyn_name = '.rela.dyn'
-     sym_name = '.symtab'
-     relaplt_name = '.rela.plt'
-     dynsym = '.dynsym'
+        reladyn_name = '.rela.dyn'
+        sym_name = '.symtab'
+        relaplt_name = '.rela.plt'
+        dynsym = '.dynsym'
+
     if elffile_patch.elfclass==32:
-     reladyn_name = '.rel.dyn'
-     sym_name = '.symtab'
-     relaplt_name = '.rel.plt'
-     dynsym = '.dynsym'
+        reladyn_name = '.rel.dyn'
+        sym_name = '.symtab'
+        relaplt_name = '.rel.plt'
+        dynsym = '.dynsym'
+
     reladyn_patch = elffile_patch.get_section_by_name(reladyn_name)
     symtab_patch = elffile_patch.get_section_by_name(sym_name)
     relaplt_patch = elffile_patch.get_section_by_name(relaplt_name)
