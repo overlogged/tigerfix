@@ -13,7 +13,7 @@ int factorial(int n)
 	int result;
 	if (n<0)                                         
 	{
-		printf("输入错误!\n");
+		printf("input error!\n");
 		return 0;
 	}
 	else if (n == 0 || n == 1)
@@ -22,7 +22,7 @@ int factorial(int n)
 	}
 	else
 	{
-		result = factorial(n - 2) * n;//改为！！
+		result = factorial(n - 2) * n; // change to ！！
 	}
 	return result;
 }
