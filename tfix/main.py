@@ -53,20 +53,16 @@ def main():
     args = parser.parse_args()
     func = None
     
-    if 1:
+    try:
         func = args.func
-        func(args)
-    else:
+    except AttributeError:
+        parser.print_help()
+    finally:
         try:
-            func = args.func
+            if not func is None:
+                func(args)
         except AttributeError:
-            parser.print_help()
-        finally:
-            try:
-                if not func is None:
-                    func(args)
-            except AttributeError:
-                args.sub.print_help()
+            args.sub.print_help()
 
 if __name__ == "__main__":
     main()
