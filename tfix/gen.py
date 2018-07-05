@@ -13,6 +13,11 @@ def do_link(obj_files,target_file):
         a=open(file,'rb')
         elffile_patch = ef.ELFFile(a)
         text_patch = elffile_patch.get_section_by_name('.rela.text')
+        print("hi")
+        if(text_patch is None):
+          print("hello")
+          continue
+        print("shi")
         sym_patch = elffile_patch.get_section_by_name('.symtab')
         for reloc in text_patch.iter_relocations():
             name = sym_patch.get_symbol(reloc['r_info_sym']).name
@@ -21,6 +26,7 @@ def do_link(obj_files,target_file):
 
 	 
     command = "ld %s -shared -fno-plt %s -o %s" % (' '.join(obj_files),' '.join(symbol_list),target_file)
+    print(command)
     os.system(command)
     # print(command)
     return target_file
@@ -78,12 +84,18 @@ def main(args):
         main_exaddr.append(symtab_main.get_symbol_by_name(name)[0].entry['st_value'])
 
     print('84')
-    for reloc in reladyn_patch.iter_relocations():
+    if(reladyn_patch is None):
+     pass
+    else:
+     for reloc in reladyn_patch.iter_relocations():
                 # Relocation entry attributes are available through item lookup
                 addr = reloc['r_offset']
                 name = dynsym_patch.get_symbol(reloc['r_info_sym']).name
                 got.append((name, addr))
-    for reloc in relaplt_patch.iter_relocations():
+    if(relaplt_patch is None):
+     pass
+    else:
+     for reloc in relaplt_patch.iter_relocations():
                 # Relocation entry attributes are available through item lookup
                 addr = reloc['r_offset']
                 name = dynsym_patch.get_symbol(reloc['r_info_sym']).name
