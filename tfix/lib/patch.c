@@ -168,7 +168,7 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
     ptr_t main_base = (ptr_t) main_info.dli_fbase * flag;	// flag:  0 for abs
 
     // fix got
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < n; i++) {
         ptr_t *p_got_item = (ptr_t *) (ext_symbols[2 * i] + so_base);
         ptr_t real_addr = ext_symbols[2 * i + 1] + main_base;
 
@@ -181,7 +181,7 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
     }
 
     // fix
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < m; i++) {
 
         ptr_t old_func = main_base + fix_units[2 * i];
         ptr_t new_func = so_base + fix_units[2 * i + 1];
