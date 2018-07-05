@@ -24,9 +24,11 @@ Usage
 
     tfix install
 
+
 + write your main program
     + include <tigerfix/def.h>
     + add **-ltfix** flag when linking
+
 
 + write your patch file
     + include <tigerfix/dev.h>
@@ -37,11 +39,13 @@ Usage
 
         gcc patch.c -c -fPIC -o patch.o
 
+
 + generate patch file
 
 .. code ::
 
     tfix gen -m main -o patch.tfp patch.o 
+
 
 + do hotfix
     + eval **pgrep main** , and you will get a pid(for example,10000)
