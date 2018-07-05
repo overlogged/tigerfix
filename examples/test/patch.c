@@ -8,5 +8,6 @@ PATCH_VERSION("1.0");
 
 FIXFUN(p)
 int p() {
+    for(volatile int i = 0; i < 2; i ++)(void)i++;
     return 2;
 }

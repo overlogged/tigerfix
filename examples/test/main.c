@@ -7,21 +7,23 @@
 #include <tigerfix/def.h>
 
 __attribute_noinline__ int p(){
+    for(volatile int i = 0; i < 2; i ++)(void)i++;
 	return 1;
 }
 
 void fac(){
 	int i,n;
-	for(i=1;i<100000;i++)
-	{sleep(1);
-	n = p();
-	printf("%d\n",n);
+	for(i = 1; i < 100000; i ++)
+	{
+        sleep(1);
+        n = p();
+        printf("%d\n",n);
 	}
-} 
+}
 
 
 
-int main() {                                         
+int main() {
 	fac();
 	return 0;
 }
