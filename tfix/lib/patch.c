@@ -68,10 +68,10 @@ static __attribute_noinline__ __attribute_used__ void do_fix() {
 static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
 #endif
     const char *path = (char *)uesp;
-    // puts(path);
+    puts(path);
 
     addr_t pmain = strtol(path + 4032, NULL, 10);
-    // printf("pmain: "ADDRTYPE"\n", pmain);
+    printf("pmain: "ADDRTYPE"\n", pmain);
 
     if (tigerfix_magic) tigerfix_magic = 0x20796b73;
 
@@ -149,8 +149,9 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
     const long pagesize = sysconf(_SC_PAGE_SIZE);
 
     // redirect symbols in so
-    if(n) ptr_t *ext_symbols = malloc(sizeof(ptr_t) * 2 * n);
-    if(m) ptr_t *fix_units = malloc(sizeof(ptr_t) * 2 * m);
+    ptr_t *ext_symbols = NULL, *fix_units = NULL;
+    if(n) ext_symbols = malloc(sizeof(ptr_t) * 2 * n);
+    if(m) fix_units = malloc(sizeof(ptr_t) * 2 * m);
 
     for(int i = 0; i < n; i ++){
 		ext_symbols[2 * i] = sym[i][0];
@@ -233,5 +234,5 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
 	free(ext_symbols);
 	free(fix_units);
 	free(mem);
-	// printf("fix finish\n");
+	printf("fix finish\n");
 }
