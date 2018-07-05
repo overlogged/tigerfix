@@ -28,9 +28,10 @@ __attribute_noinline__ int factorial(int n)
 void fac(){
 	int i,n;
 	for(i=1;i<100000;i++)
-	{sleep(10);
-	n=factorial(i);
-	printf("%d\n",n);
+	{
+		sleep(10);
+		n=factorial(i);
+		printf("%d\n",n);
 	}
 } 
 

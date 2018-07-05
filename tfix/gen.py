@@ -22,6 +22,7 @@ def unresolved_sym(name):
 
 def do_link(obj_files,target_file,tmp_file):
     command = "gcc %s -shared -fno-plt -o %s" % (' '.join(obj_files),tmp_file)
+    # print(command)
     os.system(command)
 
     symbol_list = []
@@ -37,6 +38,7 @@ def do_link(obj_files,target_file,tmp_file):
                 symbol_list.append("--defsym %s=0xc0ffee"%sym)
 
     command = "ld %s -lc -shared -fno-plt %s -o %s" % (' '.join(obj_files),' '.join(symbol_list),target_file)
+    # print(command)
     os.system(command)
     return target_file
 
@@ -136,7 +138,7 @@ def main(args):
     configfile = open(config_path,'w+')
     configfile.write('%d\n'%sig)
     configfile.write("%d\n"%len(extern_name))
-    print(extern_name)
+    # print(extern_name)
 
     for i in range(len(main_exaddr)):
         configfile.write(hex(got_addr[i])[2:]+' '+hex(main_exaddr[i])[2:]+'\n')
