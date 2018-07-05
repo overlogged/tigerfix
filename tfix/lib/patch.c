@@ -83,14 +83,14 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
 
 	assert(fscanf(fp, "%d%d", &flag, &n) != EOF);
 
-	sym = (addr_t(*)[2])malloc(sizeof(addr_t) * 2 * n);
+	if(n) sym = (addr_t(*)[2])malloc(sizeof(addr_t) * 2 * n);
 	for(int i = 0; i < n; i ++){
 		assert(fscanf(fp, ADDRTYPE""ADDRTYPE, &sym[i][0], &sym[i][1]) != EOF);
 	}
 
 	assert(fscanf(fp, "%d", &m) != EOF);
 
-    addr = (addr_t(*)[2])malloc(sizeof(addr_t) * 2 * m);
+    if(m) addr = (addr_t(*)[2])malloc(sizeof(addr_t) * 2 * m);
 	for(int i = 0; i < m; i ++) {
 		assert(fscanf(fp, ADDRTYPE""ADDRTYPE, &addr[i][0], &addr[i][1]) != EOF);
 	}
@@ -149,8 +149,8 @@ static __attribute_noinline__ __attribute_used__ void do_fix(void *uesp) {
     const long pagesize = sysconf(_SC_PAGE_SIZE);
 
     // redirect symbols in so
-    ptr_t *ext_symbols = malloc(sizeof(ptr_t) * 2 * n);
-    ptr_t *fix_units = malloc(sizeof(ptr_t) * 2 * m);
+    if(n) ptr_t *ext_symbols = malloc(sizeof(ptr_t) * 2 * n);
+    if(m) ptr_t *fix_units = malloc(sizeof(ptr_t) * 2 * m);
 
     for(int i = 0; i < n; i ++){
 		ext_symbols[2 * i] = sym[i][0];
