@@ -10,16 +10,12 @@ def hex_64bit(some_int):
 def do_link(obj_files,target_file):
     symbol_list = []
     for file in obj_files:
-        elffile_patch = ef.ELFFile(file)
-        reladyn_patch = elffile_patch.get_section_by_name('.rela.dyn')
-        relaplt_patch = elffile_patch.get_section_by_name('.rela.plt')
-        dynsym_patch = elffile_patch.get_section_by_name('dynsym')
-        for reloc in reladyn_patch.iter_relocations():
-            name = dynsym_patch.get_symbol(reloc['r_info_sym']).name
-            if name!='':
-                symbol_list.append("--defsym %s=0xc0ffee"%name)
-        for reloc in relaplt_patch.iter_relocations():
-            name = dynsym_patch.get_symbol(reloc['r_info_sym']).name
+        a=open(file,'rb')
+        elffile_patch = ef.ELFFile(a)
+        text_patch = elffile_patch.get_section_by_name('.rela.text')
+        sym_patch = elffile_patch.get_section_by_name('.symtab')
+        for reloc in text_patch.iter_relocations():
+            name = sym_patch.get_symbol(reloc['r_info_sym']).name
             if name!='':
                 symbol_list.append("--defsym %s=0xc0ffee"%name)
 
@@ -118,7 +114,7 @@ def main(args):
     print('118')
     #write
     print(target_path)
-    configfile = open(target_path,'w+')
+    configfile = open(config_path,'w+')
     configfile.write('%d\n'%sig)
     print(sig)
     configfile.write("%d\n"%len(extern_name))
@@ -132,4 +128,10 @@ def main(args):
         print(hex(mainfunc_addr[i])[2:]+' '+hex(patchfunc_addr[i])[2:]+'\n')
     configfile.close()
     # concat
+    cfg_bin = open(config_path, 'rb')
+    patch_bin = open(so_path, 'rb')
+    tfp_file = open(target_path, 'wb')
+    tfp_file.write(cfg_bin.read())
+    tfp_file.write(patch_bin.read())
+    tfp_file.close()
     rmtree(fix_dir)

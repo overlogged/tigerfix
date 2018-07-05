@@ -68,8 +68,8 @@ def main(args):
 
     # x86-64
     # nm /usr/lib/libtfix.so | grep do_fix_entry
-
-    elffile_tfix = ef.ELFFile(os.path.join(lib_installation_path, str_tiger))
+    a = open(os.path.join(lib_installation_path, str_tiger),'rb')
+    elffile_tfix = ef.ELFFile(a)
     elffile_sym = elffile_tfix.get_section_by_name('.symtab')
     symbol_name = [x.name for x in elffile_sym.iter_symbols()]
     if "do_fix_entry" in symbol_name:
